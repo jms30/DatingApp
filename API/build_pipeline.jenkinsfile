@@ -1,0 +1,36 @@
+pipeline {
+    environment {
+        registry = "smj2020/datingapp-api"
+        registryCredential = "dockerhub"
+        dockerImage = ''
+    }
+    agent any
+    stages {
+        stage('Cloning Git') {
+            steps {
+                git 'https://github.com/jms30/DatingApp.git'
+            }
+        }
+        stage('Building image') {
+            steps {
+                script {
+                    dockerImage = docker.build(registry + ":$BUILD_NUMBER", "-f API/.Dockerfile .")
+                }
+            }
+        }
+        // stage('Deploy Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry( '', registryCredential ) {
+        //                 dockerImage.push()
+        //             }
+        //         }
+        //     }
+        // }
+        stage('Remove Unused docker image') {
+            steps{
+                sh "docker rmi $(docker images | grep datingapp-api | tr -s ' ' | cut -d ' ' -f 3)"
+            }
+        }
+    }
+}
