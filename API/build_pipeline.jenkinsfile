@@ -29,7 +29,7 @@ pipeline {
         // }
         stage('Remove Unused docker image') {
             steps{
-                sh "docker rmi \$(docker images | grep datingapp-api | tr -s ' ' | cut -d ' ' -f 3)"
+                sh "docker rmi -f \$(docker images | grep datingapp-api | tr -s ' ' | cut -d ' ' -f 3)"
             }
         }
     }
