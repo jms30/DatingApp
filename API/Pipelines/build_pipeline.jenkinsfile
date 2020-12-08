@@ -1,0 +1,50 @@
+pipeline {
+    environment {
+        dockerImage = ''
+    }
+    agent any
+    parameters {
+        booleanParam(name: 'Push', defaultValue: false, description: 'Push Built Docker image to Docker hub.')
+        string(name: 'DockerReg', defaultValue: 'smj2020/datingapp-api', description: 'Docker Registry to push docker images to.')
+    }
+
+    stages {
+        stage('Cloning Git') {
+            steps {
+                git 'https://github.com/jms30/DatingApp.git'
+            }
+        }
+        stage('Building image') {
+            steps {
+                script {
+                    dockerImage = docker.build(params.DockerReg + ":$BUILD_NUMBER", "-f API/.Dockerfile .")
+                }
+            }
+        }
+        
+        stage('Deploy Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
+                                                usernameVariable : 'username', 
+                                                passwordVariable : 'password')]) {
+                    script {
+                        if(params.Push) {
+                            echo "Pushing image to dockerhub repository..."
+                            docker.withRegistry( '', $FILE ) {
+                                dockerImage.push()
+                            }
+                        }
+                        else {
+                            echo "Avoid pushing image to dockerhub repository."
+                        }
+                    }
+                }
+            }
+        }
+        stage('Remove Unused docker image') {
+            steps{
+                sh "docker rmi -f \$(docker images | grep datingapp-api | tr -s ' ' | cut -d ' ' -f 3)"
+            }
+        }
+    }
+}
