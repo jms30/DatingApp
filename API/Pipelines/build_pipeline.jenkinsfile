@@ -1,5 +1,6 @@
 pipeline {
     environment {
+        dockerRegistryCredentialId = 'dockerhub'
         dockerImage = ''
     }
     agent any
@@ -11,7 +12,7 @@ pipeline {
     stages {
         stage('Cloning Git') {
             steps {
-                git 'https://github.com/jms30/DatingApp.git'
+                checkout scm
             }
         }
         stage('Building image') {
@@ -24,19 +25,15 @@ pipeline {
         
         stage('Deploy Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
-                                                usernameVariable : 'username', 
-                                                passwordVariable : 'password')]) {
-                    script {
-                        if(params.Push) {
-                            echo "Pushing image to dockerhub repository..."
-                            docker.withRegistry( '', $FILE ) {
-                                dockerImage.push()
-                            }
+                script {
+                    if(params.Push) {
+                        echo "Pushing image to dockerhub repository..."
+                        docker.withRegistry( '', dockerRegistryCredentialId ) {
+                            dockerImage.push()
                         }
-                        else {
-                            echo "Avoid pushing image to dockerhub repository."
-                        }
+                    }
+                    else {
+                        echo "Avoid pushing image to dockerhub repository."
                     }
                 }
             }
