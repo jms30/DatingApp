@@ -8,10 +8,12 @@ WORKDIR /src
 
 # Copy csproj and restore as distinct layers
 COPY ["API", "api"]
-WORKDIR /src/api
-RUN dotnet restore "API.csproj"
+COPY ["DatabaseInitializer", "databaseinitializer"]
+WORKDIR /src/
+RUN dotnet restore "api/API.csproj"
 
 # build your API image 
+WORKDIR /src/api
 RUN dotnet build "API.csproj" -c Release -o /app/build
 
 # publish API image after building.
