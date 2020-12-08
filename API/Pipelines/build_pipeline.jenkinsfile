@@ -18,7 +18,7 @@ pipeline {
         stage('Building image') {
             steps {
                 script {
-                    dockerImage = docker.build(params.DockerReg + ":$BUILD_NUMBER", "-f API/.Dockerfile .")
+                    dockerImage = docker.build(params.DockerReg + ":$BUILD_NUMBER", "-f .Dockerfile .")
                 }
             }
         }

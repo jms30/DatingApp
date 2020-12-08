@@ -16,7 +16,7 @@ services:
     container_name: datingapp-api
     build:
       context: .
-      dockerfile: ./API/.Dockerfile
+      dockerfile: ./.Dockerfile
     environment: 
       Database_ConnectionString: "Host=postgres;Port=5432;Database:postgres;User Id=postgres;Password=postgres"
       Database_Name: "datingapp"
