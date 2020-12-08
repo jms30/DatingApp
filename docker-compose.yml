@@ -1,0 +1,24 @@
+version: "3.2"
+services: 
+  postgres:
+    hostname: postgres
+    container_name: postgres
+    image: postgres:13
+    restart: always
+    ports: 
+      - "5432:5432"
+    environment: 
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+  api:
+    hostname: datingapp-api
+    container_name: datingapp-api
+    build:
+      context: .
+      dockerfile: ./API/.Dockerfile
+    environment: 
+      Database_ConnectionString: "Host=postgres;Port=5432;Database:postgres;User Id=postgres;Password=postgres"
+      Database_Name: "datingapp"
+    depends_on: 
+      - postgres
