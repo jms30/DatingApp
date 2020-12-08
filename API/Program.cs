@@ -1,4 +1,7 @@
+
 using System;
+using DatingApp.DatabaseInitializer;
+using Npgsql;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,8 +14,14 @@ namespace DatingApp.API
 {
     public class Program
     {
+        private static IConfiguration Configuration { get; } = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
+
         public static void Main(string[] args)
         {
+            InitializeDatabase();
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -22,5 +31,11 @@ namespace DatingApp.API
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+        
+        private static void InitializeDatabase() {
+            RepoDb.PostgreSqlBootstrap.Initialize();
+            var dbConnection = new NpgsqlConnection(Configuration["Database:ConnectionString"]);
+            var dbInitializer = new DatabaseInitializer.DatabaseInitializer(dbConnection);
+        }
     }
 }
