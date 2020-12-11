@@ -1,5 +1,6 @@
 
 using System;
+using System.Threading;
 using DatingApp.DatabaseInitializer;
 using Npgsql;
 using System.Collections.Generic;
@@ -15,14 +16,24 @@ namespace DatingApp.API
     public class Program
     {
         private static IConfiguration Configuration { get; } = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true)
             .AddEnvironmentVariables()
             .Build();
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            InitializeDatabase();
-            CreateHostBuilder(args).Build().Run();
+            try {
+                Thread.Sleep(2000);
+                InitializeDatabase();
+                Console.WriteLine("Successfully initialize and migrated database.");
+                CreateHostBuilder(args).Build().Run();
+                return 0;
+            }
+            catch (Exception) {
+                Console.WriteLine("Host terminated unexpectedly.");
+                return 1;
+            }
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -34,8 +45,35 @@ namespace DatingApp.API
         
         private static void InitializeDatabase() {
             RepoDb.PostgreSqlBootstrap.Initialize();
-            var dbConnection = new NpgsqlConnection(Configuration["Database:ConnectionString"]);
-            var dbInitializer = new DatabaseInitializer.DatabaseInitializer(dbConnection);
+            
+            var ddlconnectionstr = Configuration["Database:DdlConnectionString"];
+            var connectionstr = Configuration["Database:ConnectionString"];
+            var databasenames = Configuration["Database:Names"];
+
+            DatabaseInitializer.DatabaseInitializer dbInitializer = null;
+            try {
+                var dbConnection = new NpgsqlConnection(ddlconnectionstr);
+                dbInitializer = new DatabaseInitializer.DatabaseInitializer(dbConnection);
+                Console.WriteLine($"Trying to create default database with connection string : {dbConnection.ConnectionString}\n " +
+                                $"and database names: {databasenames}" );
+                dbInitializer.InitializeWithDefaultDatabase(databasenames);
+                Console.WriteLine("Default Database Creation Successful");
+            }
+            catch (Exception ex) {
+                Console.WriteLine("Exception raised while instantiating default database: " + ex);
+                throw;
+            }
+
+            try {
+                var dbConnection = new NpgsqlConnection(connectionstr);
+                dbInitializer = new DatabaseInitializer.DatabaseInitializer(dbConnection);
+                dbInitializer.Initialize();
+                Console.WriteLine("Database Migration Successful");
+            }
+            catch (Exception ex) {
+                Console.WriteLine("Exception raised while migrating in database: " + ex);
+                throw;
+            }
         }
     }
 }
